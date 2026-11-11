@@ -1,0 +1,64 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>김치 항아리 지도</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+html,body{margin:0;height:100%;font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+#map{position:absolute;inset:0}
+.jar img{width:40px;height:auto;display:block}.jar{font-size:34px;cursor:pointer;filter:drop-shadow(2px 2px 0 #222);transition:transform .1s;user-select:none}
+.jar:hover{transform:scale(1.35) rotate(-8deg)}.jar.me{animation:pop 1s infinite}@keyframes pop{50%{transform:scale(1.5)}}
+.btn{font:inherit;font-weight:bold;background:#fff;border:4px solid #222;border-radius:14px;padding:7px 14px;cursor:pointer;box-shadow:3px 3px 0 #222;color:#222;text-decoration:none;display:inline-block}
+.btn.red{background:#e63946;color:#fff}.btn:active{transform:translate(3px,3px);box-shadow:none}
+#top{position:absolute;left:12px;top:12px;z-index:1000;display:flex;gap:8px;align-items:center}
+#cnt{background:#fff4d6;border:4px solid #222;border-radius:14px;padding:6px 12px;font-weight:bold;box-shadow:4px 4px 0 #222}
+#card{position:absolute;right:14px;top:14px;bottom:14px;width:min(380px,calc(100% - 28px));overflow:auto;background:#fff4d6;border:5px solid #222;border-radius:20px;box-shadow:6px 6px 0 #222;padding:14px;z-index:1000;display:none;text-align:center}
+#card h2{margin:6px 0 2px;font-size:24px}.st{font-size:28px;color:#f4a300}.sub{font-weight:bold;margin:4px 0}
+.bowl{position:relative;width:260px;height:260px;margin:8px auto;border:6px solid #222;border-radius:50%;background:#ffe3c4;overflow:hidden}
+.bowl i{position:absolute;border-radius:50% 40% 55% 45%;mix-blend-mode:multiply;opacity:.65}.bowl b{position:absolute;font-size:38px;font-weight:400;margin:-20px 0 0 -20px}
+.ch{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin:6px 0}.ch span{background:#fff;border:2px solid #222;border-radius:10px;padding:2px 8px;font-size:13px}.ch .bd{background:#ffe066}
+h4{margin:10px 0 2px}.bars{display:flex;gap:6px;justify-content:center;font-size:13px;margin:6px 0}.bars span{background:#fff;border:2px solid #222;border-radius:10px;padding:2px 8px}
+.row{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+@media(max-width:560px){#card{top:auto;left:8px;right:8px;bottom:8px;width:auto;max-height:68vh}.bowl{width:200px;height:200px}.bowl b{font-size:28px}#top{left:8px;top:8px}}
+</style></head><body>
+<div id="map"></div>
+<div id="top"><a class="btn red" href="/">🥬 김장하러 가기</a><span id="cnt">🏺 <span id="n">0</span>개</span></div>
+<div id="card"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const TINT={h:"#d8402a",u:"#c98a3a",s:"#e8a54b",f:"#e3d36a",n:"#c9a26b",w:"#8e6bbf"};
+const $=id=>document.getElementById(id);
+const el=(tag,txt,cls)=>{const e=document.createElement(tag);if(txt!=null)e.textContent=txt;if(cls)e.className=cls;return e};
+function rng(seed){let h=0;for(const c of seed)h=(h*31+c.charCodeAt(0))>>>0;return()=>{h=(h*1664525+1013904223)>>>0;return h/4294967296}}
+function bowl(j){ // 재료와 양념이 다 섞인 김치 그림 (항아리 id로 위치 고정)
+  const r=rng(j.id),b=el("div",null,"bowl");
+  for(const s of j.sauces){if(s.p){for(let k=0;k<s.c;k++){const i=el("i");Object.assign(i.style,{width:"78px",height:"22px",borderRadius:"14px",left:(r()*60)+"%",top:(r()*80)+"%",background:s.p,transform:`rotate(${r()*160-80}deg)`,opacity:".95",mixBlendMode:"normal",border:"3px solid #2a1608",boxShadow:"inset 0 -4px 0 #0003, inset 0 3px 0 #fff4"});b.append(i)}continue}for(let k=0;k<s.c*2;k++){const i=el("i");const w=50+r()*40;Object.assign(i.style,{width:w+"px",height:w*.75+"px",left:(r()*80-5)+"%",top:(r()*80-5)+"%",background:TINT[s.t]||"#c9a26b",transform:`rotate(${r()*360}deg)`});b.append(i)}}
+  for(const m of j.mains)for(let k=0;k<m.c*3;k++){const a=r()*6.28,d=r()*38;const x=el("b",m.e.startsWith("/")?"":m.e);if(m.e.startsWith("/")){const im=document.createElement("img");im.src=m.e;im.style.cssText="height:40px";x.append(im)}Object.assign(x.style,{left:50+Math.cos(a)*d+"%",top:50+Math.sin(a)*d+"%",transform:`rotate(${r()*120-60}deg)`});b.append(x)}
+  return b}
+function tags(arr,cls){const d=el("div",null,"ch");for(const x of arr)d.append(el("span",typeof x==="string"?x:`${x.e.startsWith("/")?"":x.e+" "}${x.n}${x.c>1?" ×"+x.c:""}`,cls));return d}
+function head(j){const d=el("div");d.style.cssText="display:flex;justify-content:center;align-items:center;gap:10px";
+  const o=document.createElement("img");o.src="/img/onggi.png";o.style.width="90px";d.append(o);
+  const b=document.createElement("img");b.src=j.base==="radish"?"/img/radish.png":"/img/cabbage.png";b.style.width="90px";d.append(b);
+  if(j.boom){const x=el("div","💥");x.style.fontSize="48px";d.append(x)}return d}
+function show(j){
+  const c=$("card");c.replaceChildren(
+    head(j),el("h2",j.title),el("div",j.grade+" · "+j.total+"점","sub"),
+    el("div","★".repeat(j.stars)+"☆".repeat(5-j.stars),"st"),el("p",j.note),
+    bowl(j),el("h4","주재료"),tags(j.mains),el("h4","양념"),tags(j.sauces),
+    (()=>{const d=el("div",null,"bars");d.append(el("span","🧂 소금 "+j.scores.salt),el("span","⏱ 절이기 "+j.scores.cure),el("span","🥣 버무리기 "+j.scores.mix));return d})(),
+    tags(j.badges,"bd"),el("small",`${j.nick} · ${new Date(j.ts*1000).toLocaleDateString()}`));
+  const row=el("div",null,"row");
+  const back=el("button","← 뒤로","btn");back.onclick=()=>{c.style.display="none"};
+  const play=el("a","🥬 나도 담그기","btn red");play.href="/";
+  row.append(back,play);c.append(row);c.style.display="block";c.scrollTop=0;
+}
+const map=L.map("map").setView([36.3,127.8],7);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap contributors"}).addTo(map);
+(async()=>{
+  const q=new URLSearchParams(location.search).get("id");
+  const jars=await (await fetch("/api/kimchi")).json();$("n").textContent=jars.length;
+  for(const j of jars){
+    const icon=L.divIcon({className:"",html:`<div class="jar${j.id===q?" me":""}"><img src="/img/onggi.png" alt="" style="width:36px;height:auto;display:block"></div>`,iconSize:[40,44],iconAnchor:[20,22]});
+    L.marker([j.lat,j.lng],{icon}).addTo(map).on("click",()=>show(j));
+    if(j.id===q){map.setView([j.lat,j.lng],11);show(j)}
+  }
+})();
+</script></body></html>
